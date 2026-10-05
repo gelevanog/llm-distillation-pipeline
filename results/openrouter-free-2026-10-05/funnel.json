@@ -1,0 +1,85 @@
+[
+  {
+    "name": "requested",
+    "description": "Seed specs sent to the generator",
+    "kept": 784,
+    "dropped": 0,
+    "modified": 0,
+    "reasons": {}
+  },
+  {
+    "name": "generated",
+    "description": "Tickets the generator returned",
+    "kept": 771,
+    "dropped": 13,
+    "modified": 0,
+    "reasons": {
+      "missing_from_teacher_output": 13
+    }
+  },
+  {
+    "name": "length",
+    "description": "20-1500 characters",
+    "kept": 768,
+    "dropped": 3,
+    "modified": 0,
+    "reasons": {
+      "too_long": 2,
+      "too_short": 1
+    }
+  },
+  {
+    "name": "schema_valid",
+    "description": "Every teacher answer validates against the Pydantic schema (after one repair retry)",
+    "kept": 736,
+    "dropped": 32,
+    "modified": 0,
+    "reasons": {
+      "teacher_2_invalid": 32
+    }
+  },
+  {
+    "name": "teacher_agreement",
+    "description": "Teachers agree on intent, urgency, sentiment, product_area, order_id",
+    "kept": 462,
+    "dropped": 274,
+    "modified": 0,
+    "reasons": {
+      "disagree_urgency": 144,
+      "disagree_sentiment": 90,
+      "disagree_product_area": 38,
+      "disagree_intent": 48,
+      "disagree_order_id": 1
+    }
+  },
+  {
+    "name": "dedup",
+    "description": "MinHash near-duplicates (Jaccard >= 0.7) removed",
+    "kept": 462,
+    "dropped": 0,
+    "modified": 0,
+    "reasons": {}
+  },
+  {
+    "name": "pii_scrub",
+    "description": "Emails, phone and card numbers replaced with placeholders",
+    "kept": 462,
+    "dropped": 0,
+    "modified": 73,
+    "reasons": {
+      "email": 68,
+      "phone": 33,
+      "card": 1
+    }
+  },
+  {
+    "name": "balance",
+    "description": "At most 70 examples per intent",
+    "kept": 435,
+    "dropped": 27,
+    "modified": 0,
+    "reasons": {
+      "cap_feedback": 27
+    }
+  }
+]

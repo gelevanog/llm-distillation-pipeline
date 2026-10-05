@@ -1,0 +1,321 @@
+{
+  "created": "2026-10-05",
+  "teachers": [
+    "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+    "openrouter/dots-studio/dots-3-note-preview:free"
+  ],
+  "sizes": {
+    "train": 384,
+    "val": 51,
+    "total": 435
+  },
+  "sources": {
+    "synthetic": 435
+  },
+  "text_chars": {
+    "min": 22,
+    "p50": 252,
+    "p95": 937,
+    "max": 1435
+  },
+  "text_words_p50": 46,
+  "distribution": {
+    "train": {
+      "intent": {
+        "feedback": 62,
+        "product_question": 44,
+        "technical_issue": 43,
+        "refund_request": 40,
+        "billing_issue": 37,
+        "account_access": 34,
+        "return_exchange": 27,
+        "other": 26,
+        "order_status": 26,
+        "cancellation": 23,
+        "setup_help": 22
+      },
+      "urgency": {
+        "medium": 187,
+        "low": 163,
+        "high": 34
+      },
+      "sentiment": {
+        "neutral": 189,
+        "negative": 124,
+        "positive": 71
+      },
+      "product_area": {
+        "subscription": 68,
+        "app_account": 60,
+        "none": 60,
+        "lighting": 54,
+        "thermostat": 51,
+        "camera": 46,
+        "doorbell": 45
+      },
+      "order_id": {
+        "present": 135,
+        "null": 249
+      }
+    },
+    "val": {
+      "intent": {
+        "feedback": 8,
+        "technical_issue": 6,
+        "product_question": 6,
+        "account_access": 5,
+        "billing_issue": 5,
+        "refund_request": 5,
+        "return_exchange": 4,
+        "cancellation": 3,
+        "other": 3,
+        "setup_help": 3,
+        "order_status": 3
+      },
+      "urgency": {
+        "medium": 24,
+        "low": 20,
+        "high": 7
+      },
+      "sentiment": {
+        "negative": 23,
+        "neutral": 18,
+        "positive": 10
+      },
+      "product_area": {
+        "subscription": 16,
+        "none": 7,
+        "camera": 7,
+        "app_account": 6,
+        "lighting": 6,
+        "doorbell": 5,
+        "thermostat": 4
+      },
+      "order_id": {
+        "present": 17,
+        "null": 34
+      }
+    },
+    "all": {
+      "intent": {
+        "feedback": 70,
+        "product_question": 50,
+        "technical_issue": 49,
+        "refund_request": 45,
+        "billing_issue": 42,
+        "account_access": 39,
+        "return_exchange": 31,
+        "other": 29,
+        "order_status": 29,
+        "cancellation": 26,
+        "setup_help": 25
+      },
+      "urgency": {
+        "medium": 211,
+        "low": 183,
+        "high": 41
+      },
+      "sentiment": {
+        "neutral": 207,
+        "negative": 147,
+        "positive": 81
+      },
+      "product_area": {
+        "subscription": 84,
+        "none": 67,
+        "app_account": 66,
+        "lighting": 60,
+        "thermostat": 55,
+        "camera": 53,
+        "doorbell": 50
+      },
+      "order_id": {
+        "present": 152,
+        "null": 283
+      }
+    }
+  },
+  "funnel": [
+    {
+      "name": "requested",
+      "description": "Seed specs sent to the generator",
+      "kept": 784,
+      "dropped": 0,
+      "modified": 0,
+      "reasons": {}
+    },
+    {
+      "name": "generated",
+      "description": "Tickets the generator returned",
+      "kept": 771,
+      "dropped": 13,
+      "modified": 0,
+      "reasons": {
+        "missing_from_teacher_output": 13
+      }
+    },
+    {
+      "name": "length",
+      "description": "20-1500 characters",
+      "kept": 768,
+      "dropped": 3,
+      "modified": 0,
+      "reasons": {
+        "too_long": 2,
+        "too_short": 1
+      }
+    },
+    {
+      "name": "schema_valid",
+      "description": "Every teacher answer validates against the Pydantic schema (after one repair retry)",
+      "kept": 736,
+      "dropped": 32,
+      "modified": 0,
+      "reasons": {
+        "teacher_2_invalid": 32
+      }
+    },
+    {
+      "name": "teacher_agreement",
+      "description": "Teachers agree on intent, urgency, sentiment, product_area, order_id",
+      "kept": 462,
+      "dropped": 274,
+      "modified": 0,
+      "reasons": {
+        "disagree_urgency": 144,
+        "disagree_sentiment": 90,
+        "disagree_product_area": 38,
+        "disagree_intent": 48,
+        "disagree_order_id": 1
+      }
+    },
+    {
+      "name": "dedup",
+      "description": "MinHash near-duplicates (Jaccard >= 0.7) removed",
+      "kept": 462,
+      "dropped": 0,
+      "modified": 0,
+      "reasons": {}
+    },
+    {
+      "name": "pii_scrub",
+      "description": "Emails, phone and card numbers replaced with placeholders",
+      "kept": 462,
+      "dropped": 0,
+      "modified": 73,
+      "reasons": {
+        "email": 68,
+        "phone": 33,
+        "card": 1
+      }
+    },
+    {
+      "name": "balance",
+      "description": "At most 70 examples per intent",
+      "kept": 435,
+      "dropped": 27,
+      "modified": 0,
+      "reasons": {
+        "cap_feedback": 27
+      }
+    }
+  ],
+  "label_agreement": {
+    "tickets": 771,
+    "teachers": [
+      {
+        "models": {
+          "nvidia/nemotron-3-super-120b-a12b:free": 771
+        },
+        "valid": 771,
+        "repaired": 0,
+        "invalid": 0
+      },
+      {
+        "models": {
+          "dots-studio/dots-3-note-preview:free": 739,
+          "openrouter/dots-studio/dots-3-note-preview:free": 32
+        },
+        "valid": 739,
+        "repaired": 57,
+        "invalid": 32
+      }
+    ],
+    "both_valid": 739,
+    "fields": {
+      "intent": {
+        "agreement": 0.935,
+        "kappa": 0.928
+      },
+      "urgency": {
+        "agreement": 0.8038,
+        "kappa": 0.6679
+      },
+      "sentiment": {
+        "agreement": 0.8782,
+        "kappa": 0.807
+      },
+      "product_area": {
+        "agreement": 0.9472,
+        "kappa": 0.9381
+      },
+      "order_id": {
+        "agreement": 0.9986,
+        "kappa": 0.9977
+      }
+    },
+    "all_fields_agreement": 0.6265,
+    "seed_matrix": {
+      "topic": {
+        "product_question": 64,
+        "return_exchange": 66,
+        "order_status": 66,
+        "cancellation": 66,
+        "feedback": 64,
+        "refund_request": 64,
+        "account_access": 64,
+        "other": 126,
+        "technical_issue": 63,
+        "setup_help": 63,
+        "billing_issue": 65
+      },
+      "product": {
+        "lighting": 91,
+        "subscription": 104,
+        "camera": 106,
+        "app_account": 136,
+        "doorbell": 86,
+        "none": 151,
+        "thermostat": 97
+      },
+      "tone": {
+        "polite": 146,
+        "neutral": 162,
+        "happy": 175,
+        "angry": 138,
+        "frustrated": 150
+      },
+      "length": {
+        "short": 314,
+        "long": 162,
+        "medium": 295
+      },
+      "style": {
+        "all lowercase, chat style, no greeting": 126,
+        "non-native English speaker": 123,
+        "formal email with greeting and sign-off": 124,
+        "clean and well written": 134,
+        "several typos and missing punctuation": 148,
+        "very terse, a few words": 116
+      },
+      "order_number": {
+        "false": 487,
+        "true": 284
+      },
+      "contact_details": {
+        "false": 651,
+        "true": 120
+      }
+    }
+  }
+}

@@ -1,0 +1,98 @@
+{
+  "tickets": 771,
+  "teachers": [
+    {
+      "models": {
+        "nvidia/nemotron-3-super-120b-a12b:free": 771
+      },
+      "valid": 771,
+      "repaired": 0,
+      "invalid": 0
+    },
+    {
+      "models": {
+        "dots-studio/dots-3-note-preview:free": 739,
+        "openrouter/dots-studio/dots-3-note-preview:free": 32
+      },
+      "valid": 739,
+      "repaired": 57,
+      "invalid": 32
+    }
+  ],
+  "both_valid": 739,
+  "fields": {
+    "intent": {
+      "agreement": 0.935,
+      "kappa": 0.928
+    },
+    "urgency": {
+      "agreement": 0.8038,
+      "kappa": 0.6679
+    },
+    "sentiment": {
+      "agreement": 0.8782,
+      "kappa": 0.807
+    },
+    "product_area": {
+      "agreement": 0.9472,
+      "kappa": 0.9381
+    },
+    "order_id": {
+      "agreement": 0.9986,
+      "kappa": 0.9977
+    }
+  },
+  "all_fields_agreement": 0.6265,
+  "seed_matrix": {
+    "topic": {
+      "product_question": 64,
+      "return_exchange": 66,
+      "order_status": 66,
+      "cancellation": 66,
+      "feedback": 64,
+      "refund_request": 64,
+      "account_access": 64,
+      "other": 126,
+      "technical_issue": 63,
+      "setup_help": 63,
+      "billing_issue": 65
+    },
+    "product": {
+      "lighting": 91,
+      "subscription": 104,
+      "camera": 106,
+      "app_account": 136,
+      "doorbell": 86,
+      "none": 151,
+      "thermostat": 97
+    },
+    "tone": {
+      "polite": 146,
+      "neutral": 162,
+      "happy": 175,
+      "angry": 138,
+      "frustrated": 150
+    },
+    "length": {
+      "short": 314,
+      "long": 162,
+      "medium": 295
+    },
+    "style": {
+      "all lowercase, chat style, no greeting": 126,
+      "non-native English speaker": 123,
+      "formal email with greeting and sign-off": 124,
+      "clean and well written": 134,
+      "several typos and missing punctuation": 148,
+      "very terse, a few words": 116
+    },
+    "order_number": {
+      "false": 487,
+      "true": 284
+    },
+    "contact_details": {
+      "false": 651,
+      "true": 120
+    }
+  }
+}

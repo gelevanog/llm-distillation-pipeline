@@ -1,0 +1,427 @@
+{
+  "created": "2026-10-05T03:48:14+00:00",
+  "config": "openrouter-free",
+  "gold_items": 80,
+  "gold_path": "data/gold/gold.jsonl",
+  "systems": {
+    "teacher": {
+      "system": "teacher",
+      "model": "nvidia/nemotron-3-super-120b-a12b:free",
+      "items": 80,
+      "json_valid_rate": 1.0,
+      "schema_valid_rate": 1.0,
+      "exact_match": 0.75,
+      "field_accuracy": {
+        "intent": 0.9625,
+        "urgency": 0.9,
+        "sentiment": 0.875,
+        "product_area": 1.0,
+        "order_id": 1.0
+      },
+      "macro_f1": {
+        "intent": 0.9595,
+        "urgency": 0.9023,
+        "sentiment": 0.8942,
+        "product_area": 1.0
+      },
+      "summary_rouge_l": 0.5354,
+      "latency_s_per_item": {
+        "mean": 2.297,
+        "p50": 2.389,
+        "p95": 3.252
+      },
+      "latency_note": "batched requests of 8, latency divided by batch size",
+      "intent_confusions": [
+        {
+          "gold": "setup_help",
+          "predicted": "product_question",
+          "count": 2
+        },
+        {
+          "gold": "setup_help",
+          "predicted": "technical_issue",
+          "count": 1
+        }
+      ]
+    },
+    "student_zero_shot": {
+      "system": "student_zero_shot",
+      "model": "Qwen/Qwen2.5-0.5B-Instruct (zero-shot: labeling guide + format)",
+      "items": 80,
+      "json_valid_rate": 0.9,
+      "schema_valid_rate": 0.225,
+      "exact_match": 0.0125,
+      "field_accuracy": {
+        "intent": 0.1,
+        "urgency": 0.05,
+        "sentiment": 0.1,
+        "product_area": 0.2125,
+        "order_id": 0.125
+      },
+      "macro_f1": {
+        "intent": 0.1237,
+        "urgency": 0.0833,
+        "sentiment": 0.2097,
+        "product_area": 0.2978
+      },
+      "summary_rouge_l": 0.0624,
+      "latency_s_per_item": {
+        "mean": 6.729,
+        "p50": 6.719,
+        "p95": 7.553
+      },
+      "latency_note": "batched generation (8 per batch); single-ticket p50 10.15s",
+      "intent_confusions": [
+        {
+          "gold": "technical_issue",
+          "predicted": "__invalid__",
+          "count": 8
+        },
+        {
+          "gold": "cancellation",
+          "predicted": "__invalid__",
+          "count": 7
+        },
+        {
+          "gold": "account_access",
+          "predicted": "__invalid__",
+          "count": 7
+        },
+        {
+          "gold": "return_exchange",
+          "predicted": "__invalid__",
+          "count": 6
+        },
+        {
+          "gold": "billing_issue",
+          "predicted": "__invalid__",
+          "count": 6
+        },
+        {
+          "gold": "product_question",
+          "predicted": "__invalid__",
+          "count": 6
+        },
+        {
+          "gold": "feedback",
+          "predicted": "__invalid__",
+          "count": 6
+        },
+        {
+          "gold": "refund_request",
+          "predicted": "__invalid__",
+          "count": 5
+        }
+      ],
+      "single_request_latency_s_p50": 10.152
+    },
+    "student_finetuned": {
+      "system": "student_finetuned",
+      "model": "Qwen/Qwen2.5-0.5B-Instruct+lora",
+      "items": 80,
+      "json_valid_rate": 1.0,
+      "schema_valid_rate": 0.8625,
+      "exact_match": 0.4625,
+      "field_accuracy": {
+        "intent": 0.675,
+        "urgency": 0.5875,
+        "sentiment": 0.7875,
+        "product_area": 0.8125,
+        "order_id": 0.8625
+      },
+      "macro_f1": {
+        "intent": 0.7038,
+        "urgency": 0.4644,
+        "sentiment": 0.7985,
+        "product_area": 0.8768
+      },
+      "summary_rouge_l": 0.353,
+      "latency_s_per_item": {
+        "mean": 3.719,
+        "p50": 3.732,
+        "p95": 4.206
+      },
+      "latency_note": "batched generation (8 per batch); single-ticket p50 8.72s",
+      "intent_confusions": [
+        {
+          "gold": "order_status",
+          "predicted": "__invalid__",
+          "count": 3
+        },
+        {
+          "gold": "return_exchange",
+          "predicted": "__invalid__",
+          "count": 3
+        },
+        {
+          "gold": "setup_help",
+          "predicted": "product_question",
+          "count": 3
+        },
+        {
+          "gold": "billing_issue",
+          "predicted": "__invalid__",
+          "count": 2
+        },
+        {
+          "gold": "setup_help",
+          "predicted": "technical_issue",
+          "count": 2
+        },
+        {
+          "gold": "feedback",
+          "predicted": "__invalid__",
+          "count": 2
+        },
+        {
+          "gold": "refund_request",
+          "predicted": "return_exchange",
+          "count": 1
+        },
+        {
+          "gold": "billing_issue",
+          "predicted": "refund_request",
+          "count": 1
+        }
+      ],
+      "single_request_latency_s_p50": 8.723
+    }
+  },
+  "teacher_usage": {
+    "batched": {
+      "calls": 10,
+      "input_tokens_per_item": 143.9,
+      "output_tokens_per_item": 349.7
+    },
+    "single_request_probe": {
+      "calls": 6,
+      "latency_s": {
+        "p50": 4.19,
+        "p95": 9.09
+      },
+      "input_tokens_per_item": 879.8,
+      "output_tokens_per_item": 479.0
+    }
+  },
+  "router": {
+    "target_exact_match": 0.8,
+    "calibration": {
+      "split": "val (teacher labels)",
+      "items": 51,
+      "student_exact_match": 0.6667
+    },
+    "threshold": 0.766,
+    "gold": {
+      "threshold": 0.766,
+      "items": 80,
+      "offload_rate": 0.2125,
+      "exact_match": 0.7375,
+      "field_accuracy": {
+        "intent": 0.9625,
+        "urgency": 0.8875,
+        "sentiment": 0.875,
+        "product_area": 1.0,
+        "order_id": 1.0
+      },
+      "student_exact_match_on_offloaded": 0.7647
+    },
+    "curve": [
+      {
+        "threshold": 0.0,
+        "offload_rate": 0.8625,
+        "exact_match": 0.575
+      },
+      {
+        "threshold": 0.05,
+        "offload_rate": 0.8625,
+        "exact_match": 0.575
+      },
+      {
+        "threshold": 0.1,
+        "offload_rate": 0.8625,
+        "exact_match": 0.575
+      },
+      {
+        "threshold": 0.15,
+        "offload_rate": 0.8625,
+        "exact_match": 0.575
+      },
+      {
+        "threshold": 0.2,
+        "offload_rate": 0.8375,
+        "exact_match": 0.6
+      },
+      {
+        "threshold": 0.25,
+        "offload_rate": 0.825,
+        "exact_match": 0.6
+      },
+      {
+        "threshold": 0.3,
+        "offload_rate": 0.8125,
+        "exact_match": 0.6
+      },
+      {
+        "threshold": 0.35,
+        "offload_rate": 0.775,
+        "exact_match": 0.575
+      },
+      {
+        "threshold": 0.4,
+        "offload_rate": 0.725,
+        "exact_match": 0.6125
+      },
+      {
+        "threshold": 0.45,
+        "offload_rate": 0.6625,
+        "exact_match": 0.6375
+      },
+      {
+        "threshold": 0.5,
+        "offload_rate": 0.6125,
+        "exact_match": 0.6625
+      },
+      {
+        "threshold": 0.55,
+        "offload_rate": 0.575,
+        "exact_match": 0.6875
+      },
+      {
+        "threshold": 0.6,
+        "offload_rate": 0.5125,
+        "exact_match": 0.725
+      },
+      {
+        "threshold": 0.65,
+        "offload_rate": 0.35,
+        "exact_match": 0.7
+      },
+      {
+        "threshold": 0.7,
+        "offload_rate": 0.2875,
+        "exact_match": 0.725
+      },
+      {
+        "threshold": 0.75,
+        "offload_rate": 0.2625,
+        "exact_match": 0.725
+      },
+      {
+        "threshold": 0.8,
+        "offload_rate": 0.1625,
+        "exact_match": 0.7375
+      },
+      {
+        "threshold": 0.85,
+        "offload_rate": 0.125,
+        "exact_match": 0.7375
+      },
+      {
+        "threshold": 0.9,
+        "offload_rate": 0.0875,
+        "exact_match": 0.7375
+      },
+      {
+        "threshold": 0.95,
+        "offload_rate": 0.05,
+        "exact_match": 0.75
+      },
+      {
+        "threshold": 1.0,
+        "offload_rate": 0.0,
+        "exact_match": 0.75
+      }
+    ]
+  },
+  "cost": {
+    "per_1k_tickets": [
+      {
+        "name": "Teacher via API: nvidia/nemotron-3-super-120b-a12b (paid tier)",
+        "usd_per_1k": 0.2859,
+        "basis": "measured 880 input + 479 output tokens per ticket (single-ticket requests) x list price $0.08/$0.45 per 1M (OpenRouter list price, 2026-10-05)",
+        "measured": true
+      },
+      {
+        "name": "Teacher via API: openai/gpt-5.4-mini",
+        "usd_per_1k": 2.8154,
+        "basis": "measured 880 input + 479 output tokens per ticket (single-ticket requests) x list price $0.75/$4.5 per 1M (OpenRouter list price, 2026-10-05)",
+        "measured": true
+      },
+      {
+        "name": "Teacher via API: anthropic/claude-sonnet-5",
+        "usd_per_1k": 6.5497,
+        "basis": "measured 880 input + 479 output tokens per ticket (single-ticket requests) x list price $2.0/$10.0 per 1M (OpenRouter list price, 2026-10-05)",
+        "measured": true
+      },
+      {
+        "name": "Student self-hosted, CPU (16 vCPU cloud VM (on-demand))",
+        "usd_per_1k": 0.7025,
+        "basis": "measured 3.72 s/ticket (batched generation); assumed $0.68/h instance price",
+        "measured": true
+      },
+      {
+        "name": "Student self-hosted, GPU (1x NVIDIA L4 (24 GB))",
+        "usd_per_1k": 0.0111,
+        "basis": "assumption, not measured: 20 tickets/s batched on a GPU server at $0.8/h",
+        "measured": false
+      }
+    ],
+    "assumptions": {
+      "cpu_instance": "16 vCPU cloud VM (on-demand)",
+      "cpu_hourly_usd": 0.68,
+      "gpu_instance": "1x NVIDIA L4 (24 GB)",
+      "gpu_hourly_usd": 0.8,
+      "gpu_assumed_items_per_second": 20.0
+    },
+    "routed": [
+      {
+        "teacher": "nvidia/nemotron-3-super-120b-a12b (paid tier)",
+        "student": "CPU",
+        "usd_per_1k": 0.9276,
+        "offload_rate": 0.2125
+      },
+      {
+        "teacher": "openai/gpt-5.4-mini",
+        "student": "CPU",
+        "usd_per_1k": 2.9196,
+        "offload_rate": 0.2125
+      },
+      {
+        "teacher": "anthropic/claude-sonnet-5",
+        "student": "CPU",
+        "usd_per_1k": 5.8604,
+        "offload_rate": 0.2125
+      }
+    ]
+  },
+  "training": {
+    "base_model": "Qwen/Qwen2.5-0.5B-Instruct",
+    "device": "cpu",
+    "torch_threads": 16,
+    "cpu": "x86_64",
+    "examples": 384,
+    "val_examples": 51,
+    "epochs": 2.0,
+    "steps": 96,
+    "trainable_params": 8798208,
+    "total_params": 502830976,
+    "lora": {
+      "r": 16,
+      "alpha": 32,
+      "dropout": 0.05,
+      "targets": "all-linear"
+    },
+    "learning_rate": 0.0003,
+    "batch_size": 8,
+    "seq_len": {
+      "mean": 304.2,
+      "max": 490
+    },
+    "answer_tokens": 24818,
+    "train_loss": 0.3338,
+    "wall_seconds": 3439.3,
+    "seconds_per_example_epoch": 4.478,
+    "adapter_mb": 35.24,
+    "final_eval_loss": 0.373
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "passes": [
+    {
+      "requested": 720,
+      "generated": 707,
+      "topics": "all",
+      "id_prefix": "s"
+    },
+    {
+      "requested": 64,
+      "generated": 64,
+      "topics": [
+        "other"
+      ],
+      "id_prefix": "o"
+    }
+  ]
+}

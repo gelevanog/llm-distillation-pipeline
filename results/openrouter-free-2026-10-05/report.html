@@ -1,0 +1,536 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Distillery results</title>
+  <style>:root {
+  color-scheme: light;
+  --bg: #f6f7f9;
+  --surface: #fcfcfb;
+  --text: #1c2330;
+  --muted: #5d6573;
+  --border: #e3e6eb;
+  --grid: #e9ebef;
+  --accent: #3b5bdb;
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --good: #2b8a3e;
+  --good-bg: #e6f4ea;
+  --warn: #b35c00;
+  --warn-bg: #fff4e0;
+  --bad: #c92a2a;
+  --bad-bg: #fdecec;
+  --chip: #eef0f3;
+  --radius: 10px;
+  --shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0f1216;
+    --surface: #1a1a19;
+    --text: #e4e7ec;
+    --muted: #a3abb8;
+    --border: #2d333c;
+    --grid: #2a2f37;
+    --accent: #7b93f5;
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --good: #69c47f;
+    --good-bg: #15291b;
+    --warn: #f0a64b;
+    --warn-bg: #33240f;
+    --bad: #f07171;
+    --bad-bg: #321717;
+    --chip: #262b33;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0f1216; --surface: #1a1a19; --text: #e4e7ec; --muted: #a3abb8; --border: #2d333c; --grid: #2a2f37;
+  --accent: #7b93f5; --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70;
+  --good: #69c47f; --good-bg: #15291b; --warn: #f0a64b; --warn-bg: #33240f; --bad: #f07171; --bad-bg: #321717; --chip: #262b33;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--text); background: var(--bg); }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1 { font-size: 1.45rem; margin: 0 0 0.25rem; letter-spacing: -0.01em; }
+h2 { font-size: 1.1rem; margin: 2.25rem 0 0.75rem; }
+h3 { font-size: 0.95rem; margin: 0 0 0.6rem; }
+p { margin: 0.4rem 0; }
+code, .mono { font-family: var(--mono); font-size: 0.88em; }
+.muted { color: var(--muted); }
+.small { font-size: 0.82rem; }
+.num { font-variant-numeric: tabular-nums; }
+
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 0.7rem 1.5rem; background: var(--surface); border-bottom: 1px solid var(--border); }
+.brand { font-weight: 650; color: var(--text); display: flex; align-items: center; gap: 0.55rem; }
+.logo { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 7px; background: var(--accent); color: #fff; font-size: 0.8rem; font-weight: 700; }
+.topbar nav { display: flex; gap: 1.25rem; }
+.topbar nav a { color: var(--muted); }
+.topbar nav a.active { color: var(--text); font-weight: 600; }
+.container { max-width: 1180px; margin: 0 auto; padding: 1.5rem 16px 3rem; }
+@media (min-width: 720px) { .container { padding: 1.75rem 1.5rem 3rem; } }
+
+.hero { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; align-items: flex-end; }
+.chips { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.chip { background: var(--chip); color: var(--muted); border-radius: 999px; padding: 0.1rem 0.6rem; font-size: 0.78rem; white-space: nowrap; }
+.chip-good { background: var(--good-bg); color: var(--good); }
+.chip-warn { background: var(--warn-bg); color: var(--warn); }
+
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 0.75rem; margin-top: 1.25rem; }
+.tile, .panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
+.tile { padding: 0.85rem 1rem; }
+.tile-value { font-size: 1.55rem; font-weight: 650; line-height: 1.2; }
+.tile-label { color: var(--muted); font-size: 0.8rem; }
+.tile-sub { color: var(--muted); font-size: 0.78rem; margin-top: 0.2rem; }
+.panel { padding: 1rem 1.15rem; overflow-x: auto; }
+.two-col { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; }
+@media (min-width: 900px) { .two-col { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.three-col { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; align-items: start; }
+
+table { border-collapse: collapse; width: 100%; }
+th, td { text-align: left; padding: 0.45rem 0.6rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+th { font-size: 0.78rem; color: var(--muted); font-weight: 600; }
+td.num, th.num { text-align: right; }
+tr:last-child td { border-bottom: 0; }
+
+.legend { display: flex; gap: 1rem; flex-wrap: wrap; font-size: 0.82rem; color: var(--muted); margin-bottom: 0.6rem; }
+.swatch { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 0.35rem; vertical-align: -1px; }
+.s1 { background: var(--series-1); } .s2 { background: var(--series-2); } .s3 { background: var(--series-3); }
+.cell-bar { display: flex; align-items: center; gap: 0.5rem; min-width: 140px; }
+.cell-bar .track { flex: 1; height: 8px; background: var(--grid); border-radius: 4px; overflow: hidden; }
+.cell-bar .fill { height: 100%; border-radius: 0 4px 4px 0; }
+.cell-bar .value { width: 3.6rem; text-align: right; font-variant-numeric: tabular-nums; font-size: 0.86rem; }
+
+.funnel-row { display: grid; grid-template-columns: 9.5rem minmax(0, 1fr) 3.5rem; gap: 0.6rem; align-items: center; padding: 0.3rem 0; }
+.funnel-bar { display: flex; height: 18px; gap: 2px; }
+.funnel-kept { background: var(--series-1); border-radius: 0 4px 4px 0; }
+.funnel-dropped { background: repeating-linear-gradient(45deg, var(--grid), var(--grid) 4px, transparent 4px, transparent 7px); border: 1px solid var(--border); border-radius: 0 4px 4px 0; }
+.funnel-name { font-size: 0.86rem; }
+.funnel-details { grid-column: 2 / 4; font-size: 0.76rem; color: var(--muted); margin-top: -0.2rem; }
+
+.dist { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; }
+.dist-row { display: grid; grid-template-columns: 8.5rem minmax(0, 1fr) 2.6rem; gap: 0.5rem; align-items: center; font-size: 0.8rem; padding: 0.12rem 0; }
+.dist-row .track { height: 7px; background: transparent; }
+.dist-row .fill { height: 100%; background: var(--series-1); border-radius: 0 4px 4px 0; }
+
+svg text { fill: var(--muted); font-size: 11px; font-family: system-ui, sans-serif; }
+svg .gridline { stroke: var(--grid); stroke-width: 1; }
+svg .line-1 { stroke: var(--series-1); stroke-width: 2; fill: none; }
+svg .line-2 { stroke: var(--series-2); stroke-width: 2; fill: none; }
+svg .dot-1 { fill: var(--series-1); stroke: var(--surface); stroke-width: 2; }
+svg .dot-2 { fill: var(--series-2); stroke: var(--surface); stroke-width: 2; }
+svg .marker-line { stroke: var(--text); stroke-width: 1; stroke-dasharray: 3 3; opacity: 0.6; }
+svg .hit { fill: transparent; }
+svg .hit:hover + .hover-dots { opacity: 1; }
+svg .hover-dots { opacity: 0; pointer-events: none; }
+svg .label { fill: var(--text); font-weight: 600; }
+
+.badge { display: inline-block; padding: 0.05rem 0.5rem; border-radius: 6px; font-size: 0.75rem; font-weight: 600; }
+.badge-measured { background: var(--good-bg); color: var(--good); }
+.badge-assumed { background: var(--warn-bg); color: var(--warn); }
+.badge-student { background: var(--good-bg); color: var(--good); }
+.badge-teacher { background: var(--warn-bg); color: var(--warn); }
+.badge-none { background: var(--bad-bg); color: var(--bad); }
+
+.note { background: var(--surface); border: 1px dashed var(--border); border-radius: var(--radius); padding: 0.75rem 1rem; color: var(--muted); font-size: 0.86rem; }
+
+form.play { display: flex; flex-direction: column; gap: 0.6rem; }
+textarea, select { width: 100%; font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 7px; padding: 0.55rem 0.7rem; }
+textarea { min-height: 7rem; resize: vertical; }
+.btn { font: inherit; font-weight: 600; border: 0; border-radius: 7px; padding: 0.5rem 1.1rem; cursor: pointer; background: var(--accent); color: #fff; align-self: flex-start; }
+.htmx-request .btn, .btn.htmx-request { opacity: 0.6; cursor: progress; }
+.result-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; margin-top: 1rem; }
+@media (min-width: 860px) { .result-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.kv td:first-child { color: var(--muted); width: 8.5rem; font-size: 0.85rem; }
+.conf { display: inline-block; width: 60px; height: 6px; border-radius: 3px; background: var(--grid); vertical-align: middle; margin-left: 0.4rem; overflow: hidden; }
+.conf span { display: block; height: 100%; background: var(--series-3); }
+.decision { margin-top: 1rem; padding: 0.7rem 1rem; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface); }
+pre { background: var(--bg); border: 1px solid var(--border); border-radius: 7px; padding: 0.6rem 0.75rem; white-space: pre-wrap; word-break: break-word; font-size: 0.8rem; margin: 0.5rem 0 0; }
+.diff { color: var(--bad); font-weight: 600; }
+footer { margin-top: 3rem; color: var(--muted); font-size: 0.8rem; }</style>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#"><span class="logo">D</span> Distillery</a>
+  </header>
+  <main class="container">
+<section class="hero">
+  <div>
+    <h1>Teacher vs student on support-ticket triage</h1>
+    <p class="muted">A large LLM labels synthetic tickets; a small model is fine-tuned on them and scored on a hand-labeled gold set.</p>
+  </div>
+  <div class="chips">
+    <span class="chip">config: openrouter-free</span>
+<span class="chip">evaluated 2026-10-05</span><span class="chip chip-good">186 real API calls, all :free models</span>  </div>
+</section>
+
+
+<div class="tiles">
+  <div class="tile"><div class="tile-label">Training examples</div><div class="tile-value num">384</div>
+    <div class="tile-sub">+ 51 validation, after filtering</div></div>
+  <div class="tile"><div class="tile-label">Gold test tickets</div><div class="tile-value num">80</div>
+    <div class="tile-sub">written and labeled by hand</div></div>
+  <div class="tile"><div class="tile-label">Fine-tuned student, exact match</div>
+    <div class="tile-value num">46.2%</div>
+    <div class="tile-sub">teacher 75.0% · zero-shot 1.2%</div></div>
+  <div class="tile"><div class="tile-label">Traffic the student keeps</div>
+    <div class="tile-value num">21%</div>
+    <div class="tile-sub">routed exact match 73.8%</div></div>
+  <div class="tile"><div class="tile-label">Student cost / 1k tickets (CPU)</div>
+    <div class="tile-value num">$0.703</div>
+    <div class="tile-sub">measured latency, assumed VM price</div></div>
+</div>
+
+<h2 id="comparison">Gold-set comparison</h2>
+<div class="panel">
+  <div class="legend">
+<span><span class="swatch s1"></span>Teacher: <code>nvidia/nemotron-3-super-120b-a12b:free</code></span><span><span class="swatch s2"></span>Student, zero-shot: <code>Qwen/Qwen2.5-0.5B-Instruct (zero-shot: labeling guide + format)</code></span><span><span class="swatch s3"></span>Student, fine-tuned: <code>Qwen/Qwen2.5-0.5B-Instruct+lora</code></span>  </div>
+  <table>
+    <thead><tr><th>Metric</th><th>Teacher</th><th>Student, zero-shot</th><th>Student, fine-tuned</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>JSON valid<div class="small muted">Output parses as JSON</div></td>
+        <td><div class="cell-bar" title="JSON valid: 100.0%"><div class="track"><div class="fill s1" style="width: 100.0%"></div></div><span class="value">100.0%</span></div></td>
+        <td><div class="cell-bar" title="JSON valid: 90.0%"><div class="track"><div class="fill s2" style="width: 90.0%"></div></div><span class="value">90.0%</span></div></td>
+        <td><div class="cell-bar" title="JSON valid: 100.0%"><div class="track"><div class="fill s3" style="width: 100.0%"></div></div><span class="value">100.0%</span></div></td>
+      </tr>
+      <tr>
+        <td>Schema valid<div class="small muted">Passes the Pydantic schema</div></td>
+        <td><div class="cell-bar" title="Schema valid: 100.0%"><div class="track"><div class="fill s1" style="width: 100.0%"></div></div><span class="value">100.0%</span></div></td>
+        <td><div class="cell-bar" title="Schema valid: 22.5%"><div class="track"><div class="fill s2" style="width: 22.5%"></div></div><span class="value">22.5%</span></div></td>
+        <td><div class="cell-bar" title="Schema valid: 86.2%"><div class="track"><div class="fill s3" style="width: 86.25%"></div></div><span class="value">86.2%</span></div></td>
+      </tr>
+      <tr>
+        <td>Exact match<div class="small muted">All 5 structured fields correct</div></td>
+        <td><div class="cell-bar" title="Exact match: 75.0%"><div class="track"><div class="fill s1" style="width: 75.0%"></div></div><span class="value">75.0%</span></div></td>
+        <td><div class="cell-bar" title="Exact match: 1.2%"><div class="track"><div class="fill s2" style="width: 1.25%"></div></div><span class="value">1.2%</span></div></td>
+        <td><div class="cell-bar" title="Exact match: 46.2%"><div class="track"><div class="fill s3" style="width: 46.25%"></div></div><span class="value">46.2%</span></div></td>
+      </tr>
+      <tr>
+        <td>Intent accuracy</td>
+        <td><div class="cell-bar" title="Intent accuracy: 96.2%"><div class="track"><div class="fill s1" style="width: 96.25%"></div></div><span class="value">96.2%</span></div></td>
+        <td><div class="cell-bar" title="Intent accuracy: 10.0%"><div class="track"><div class="fill s2" style="width: 10.0%"></div></div><span class="value">10.0%</span></div></td>
+        <td><div class="cell-bar" title="Intent accuracy: 67.5%"><div class="track"><div class="fill s3" style="width: 67.5%"></div></div><span class="value">67.5%</span></div></td>
+      </tr>
+      <tr>
+        <td>Urgency accuracy</td>
+        <td><div class="cell-bar" title="Urgency accuracy: 90.0%"><div class="track"><div class="fill s1" style="width: 90.0%"></div></div><span class="value">90.0%</span></div></td>
+        <td><div class="cell-bar" title="Urgency accuracy: 5.0%"><div class="track"><div class="fill s2" style="width: 5.0%"></div></div><span class="value">5.0%</span></div></td>
+        <td><div class="cell-bar" title="Urgency accuracy: 58.8%"><div class="track"><div class="fill s3" style="width: 58.75%"></div></div><span class="value">58.8%</span></div></td>
+      </tr>
+      <tr>
+        <td>Sentiment accuracy</td>
+        <td><div class="cell-bar" title="Sentiment accuracy: 87.5%"><div class="track"><div class="fill s1" style="width: 87.5%"></div></div><span class="value">87.5%</span></div></td>
+        <td><div class="cell-bar" title="Sentiment accuracy: 10.0%"><div class="track"><div class="fill s2" style="width: 10.0%"></div></div><span class="value">10.0%</span></div></td>
+        <td><div class="cell-bar" title="Sentiment accuracy: 78.8%"><div class="track"><div class="fill s3" style="width: 78.75%"></div></div><span class="value">78.8%</span></div></td>
+      </tr>
+      <tr>
+        <td>Product area accuracy</td>
+        <td><div class="cell-bar" title="Product area accuracy: 100.0%"><div class="track"><div class="fill s1" style="width: 100.0%"></div></div><span class="value">100.0%</span></div></td>
+        <td><div class="cell-bar" title="Product area accuracy: 21.2%"><div class="track"><div class="fill s2" style="width: 21.25%"></div></div><span class="value">21.2%</span></div></td>
+        <td><div class="cell-bar" title="Product area accuracy: 81.2%"><div class="track"><div class="fill s3" style="width: 81.25%"></div></div><span class="value">81.2%</span></div></td>
+      </tr>
+      <tr>
+        <td>Order id accuracy</td>
+        <td><div class="cell-bar" title="Order id accuracy: 100.0%"><div class="track"><div class="fill s1" style="width: 100.0%"></div></div><span class="value">100.0%</span></div></td>
+        <td><div class="cell-bar" title="Order id accuracy: 12.5%"><div class="track"><div class="fill s2" style="width: 12.5%"></div></div><span class="value">12.5%</span></div></td>
+        <td><div class="cell-bar" title="Order id accuracy: 86.2%"><div class="track"><div class="fill s3" style="width: 86.25%"></div></div><span class="value">86.2%</span></div></td>
+      </tr>
+      <tr>
+        <td>Intent macro-F1<div class="small muted">Unweighted mean over 11 intents</div></td>
+        <td><div class="cell-bar" title="Intent macro-F1: 96.0%"><div class="track"><div class="fill s1" style="width: 95.95%"></div></div><span class="value">96.0%</span></div></td>
+        <td><div class="cell-bar" title="Intent macro-F1: 12.4%"><div class="track"><div class="fill s2" style="width: 12.37%"></div></div><span class="value">12.4%</span></div></td>
+        <td><div class="cell-bar" title="Intent macro-F1: 70.4%"><div class="track"><div class="fill s3" style="width: 70.38%"></div></div><span class="value">70.4%</span></div></td>
+      </tr>
+      <tr>
+        <td>Urgency macro-F1</td>
+        <td><div class="cell-bar" title="Urgency macro-F1: 90.2%"><div class="track"><div class="fill s1" style="width: 90.23%"></div></div><span class="value">90.2%</span></div></td>
+        <td><div class="cell-bar" title="Urgency macro-F1: 8.3%"><div class="track"><div class="fill s2" style="width: 8.33%"></div></div><span class="value">8.3%</span></div></td>
+        <td><div class="cell-bar" title="Urgency macro-F1: 46.4%"><div class="track"><div class="fill s3" style="width: 46.44%"></div></div><span class="value">46.4%</span></div></td>
+      </tr>
+      <tr>
+        <td>Summary ROUGE-L<div class="small muted">Word overlap with the hand-written summary</div></td>
+        <td><div class="cell-bar" title="Summary ROUGE-L: 53.5%"><div class="track"><div class="fill s1" style="width: 53.54%"></div></div><span class="value">53.5%</span></div></td>
+        <td><div class="cell-bar" title="Summary ROUGE-L: 6.2%"><div class="track"><div class="fill s2" style="width: 6.24%"></div></div><span class="value">6.2%</span></div></td>
+        <td><div class="cell-bar" title="Summary ROUGE-L: 35.3%"><div class="track"><div class="fill s3" style="width: 35.3%"></div></div><span class="value">35.3%</span></div></td>
+      </tr>
+      <tr>
+        <td>Latency per ticket<div class="small muted">mean; see notes below</div></td>
+<td class="num">2.30 s</td><td class="num">6.73 s</td><td class="num">3.72 s</td>      </tr>
+    </tbody>
+  </table>
+  <p class="small muted" style="margin-top:0.6rem">
+Teacher: batched requests of 8, latency divided by batch size. Student, zero-shot: batched generation (8 per batch); single-ticket p50 10.15s. Student, fine-tuned: batched generation (8 per batch); single-ticket p50 8.72s.    Invalid answers count as wrong in every metric.
+  </p>
+</div>
+
+<div class="three-col" id="mistakes" style="margin-top:1rem">
+  <div class="panel">
+    <h3><span class="swatch s1"></span>Teacher: most common intent mistakes</h3>
+    <table>
+      <thead><tr><th>Gold intent</th><th>Predicted</th><th class="num">Tickets</th></tr></thead>
+      <tbody><tr><td><code>setup_help</code></td><td><code>product_question</code></td><td class="num">2</td></tr><tr><td><code>setup_help</code></td><td><code>technical_issue</code></td><td class="num">1</td></tr></tbody>
+    </table>
+  </div>
+  <div class="panel">
+    <h3><span class="swatch s2"></span>Student, zero-shot: most common intent mistakes</h3>
+    <table>
+      <thead><tr><th>Gold intent</th><th>Predicted</th><th class="num">Tickets</th></tr></thead>
+      <tbody><tr><td><code>technical_issue</code></td><td><code>__invalid__</code></td><td class="num">8</td></tr><tr><td><code>cancellation</code></td><td><code>__invalid__</code></td><td class="num">7</td></tr><tr><td><code>account_access</code></td><td><code>__invalid__</code></td><td class="num">7</td></tr><tr><td><code>return_exchange</code></td><td><code>__invalid__</code></td><td class="num">6</td></tr><tr><td><code>billing_issue</code></td><td><code>__invalid__</code></td><td class="num">6</td></tr></tbody>
+    </table>
+  </div>
+  <div class="panel">
+    <h3><span class="swatch s3"></span>Student, fine-tuned: most common intent mistakes</h3>
+    <table>
+      <thead><tr><th>Gold intent</th><th>Predicted</th><th class="num">Tickets</th></tr></thead>
+      <tbody><tr><td><code>order_status</code></td><td><code>__invalid__</code></td><td class="num">3</td></tr><tr><td><code>return_exchange</code></td><td><code>__invalid__</code></td><td class="num">3</td></tr><tr><td><code>setup_help</code></td><td><code>product_question</code></td><td class="num">3</td></tr><tr><td><code>billing_issue</code></td><td><code>__invalid__</code></td><td class="num">2</td></tr><tr><td><code>setup_help</code></td><td><code>technical_issue</code></td><td class="num">2</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<h2 id="router">Router: student first, teacher on fallback</h2>
+<div class="two-col">
+  <div class="panel">
+    <div class="legend"><span><span class="swatch s1"></span>Share answered by the student</span><span><span class="swatch s2"></span>Routed exact match (gold)</span></div>
+    <svg viewBox="0 0 560 240" width="100%" role="img" aria-label="Offload rate and routed exact match by confidence threshold">
+<line class="gridline" x1="36" x2="524" y1="204" y2="204"/><text x="30" y="208" text-anchor="end">0%</text><line class="gridline" x1="36" x2="524" y1="162.0" y2="162.0"/><text x="30" y="166.0" text-anchor="end">25%</text><line class="gridline" x1="36" x2="524" y1="120.0" y2="120.0"/><text x="30" y="124.0" text-anchor="end">50%</text><line class="gridline" x1="36" x2="524" y1="78.0" y2="78.0"/><text x="30" y="82.0" text-anchor="end">75%</text><line class="gridline" x1="36" x2="524" y1="36.0" y2="36.0"/><text x="30" y="40.0" text-anchor="end">100%</text><text x="36" y="220" text-anchor="middle">0.0</text><text x="133.6" y="220" text-anchor="middle">0.2</text><text x="231.2" y="220" text-anchor="middle">0.4</text><text x="328.8" y="220" text-anchor="middle">0.6</text><text x="426.4" y="220" text-anchor="middle">0.8</text><text x="524.0" y="220" text-anchor="middle">1.0</text>      <text x="280.0" y="238" text-anchor="middle">confidence threshold</text>
+      <line class="marker-line" x1="409.8" x2="409.8" y1="36" y2="204"/>
+      <path class="line-1" d="M36.0,59.1 L60.4,59.1 L84.8,59.1 L109.2,59.1 L133.6,63.3 L158.0,65.4 L182.4,67.5 L206.8,73.8 L231.2,82.2 L255.6,92.7 L280.0,101.1 L304.4,107.4 L328.8,117.9 L353.2,145.2 L377.6,155.7 L402.0,159.9 L426.4,176.7 L450.8,183.0 L475.2,189.3 L499.6,195.6 L524.0,204.0"/>
+      <path class="line-2" d="M36.0,107.4 L60.4,107.4 L84.8,107.4 L109.2,107.4 L133.6,103.2 L158.0,103.2 L182.4,103.2 L206.8,107.4 L231.2,101.1 L255.6,96.9 L280.0,92.7 L304.4,88.5 L328.8,82.2 L353.2,86.4 L377.6,82.2 L402.0,82.2 L426.4,80.1 L450.8,80.1 L475.2,80.1 L499.6,78.0 L524.0,78.0"/>
+      <circle class="dot-1" cx="409.8" cy="168.3" r="5"/>
+      <circle class="dot-2" cx="409.8" cy="80.1" r="5"/>
+      <text class="label" x="417.8" y="28">chosen 0.77</text>
+      <g><rect class="hit" x="24.0" y="36" width="24" height="168"><title>threshold 0.00: student answers 86%, routed exact match 57.5%</title></rect>
+      <g class="hover-dots"><circle class="dot-1" cx="36.0" cy="59.1" r="4"/><circle class="dot-2" cx="36.0" cy="107.4" r="4"/></g></g>
+      <g><rect class="hit" x="48.4" y="36" width="24" height="168"><title>threshold 0.05: student answers 86%, routed exact match 57.5%</title></rect>
+      <g class="hover-dots"><circle class="dot-1" cx="60.4" cy="59.1" r="4"/><circle class="dot-2" cx="60.4" cy="107.4" r="4"/></g></g>
+      <g><rect class="hit" x="72.8" y="36" width="24" height="168"><title>threshold 0.10: student answers 86%, routed exact match 57.5%</title></rect>
+      <g class="hover-dots"><circle class="dot-1" cx="84.8" cy="59.1" r="4"/><circle class="dot-2" cx="84.8" cy="107.4" r="4"/></g></g>
+      <g><rect class="hit" x="97.2" y="36" width="24" height="168"><title>threshold 0.15: student answers 86%, routed exact match 57.5%</title></rect>
+      <g class="hover-dots"><circle class="dot-1" cx="109.2" cy="59.1" r="4"/><circle class="dot-2" cx="109.2" cy="107.4" r="4"/></g></g>
+      <g><rect class="hit" x="121.6" y="36" width="24" height="168"><title>threshold 0.20: student answers 84%, routed exact match 60.0%</title></rect>
+      <g class="hover-dots"><circle class="dot-1" cx="133.6" cy="63.3" r="4"/><circle class="dot-2" cx="133.6" cy="103.2" r="4"/></g></g>
+      <g><rect class="hit" x="146.0" y="36" width="24" height="168"><title>threshold 0.25: student answers 82%, routed exact match 60.0%</title></rect>
+      <g class="hover-dots"><circle class="dot-1" cx="158.0" cy="65.4" r="4"/><circle class="dot-2" cx="158.0" cy="103.2" r="4"/></g></g>
+      <g><rect class="hit" x="170.4" y="36" width="24" height="168"><title>threshold 0.30: student answers 81%, routed exact match 60.0%</title></rect>
+      <g class="hover-dots"><circle class="dot-1" cx="182.4" cy="67.5" r="4"/><circle class="dot-2" cx="182.4" cy="103.2" r="4"/></g></g>
+      <g><rect class="hit" x="194.8" y="36" width="24" height="168"><title>threshold 0.35: student answers 78%, routed exact match 57.5%</title></rect>
+      <g class="hover-dots"><circle class="dot-1" cx="206.8" cy="73.8" r="4"/><circle class="dot-2" cx="206.8" cy="107.4" r="4"/></g></g>
+      <g><rect class="hit" x="219.2" y="36" width="24" height="168"><title>threshold 0.40: student answers 72%, routed exact match 61.3%</title></rect>
+      <g class="hover-dots"><circle class="dot-1" cx="231.2" cy="82.2" r="4"/><circle class="dot-2" cx="231.2" cy="101.1" r="4"/></g></g>
+      <g><rect class="hit" x="243.6" y="36" width="24" height="168"><title>threshold 0.45: student answers 66%, routed exact match 63.7%</title></rect>
+      <g class="hover-dots"><circle class="dot-1" cx="255.6" cy="92.7" r="4"/><circle class="dot-2" cx="255.6" cy="96.9" r="4"/></g></g>
+      <g><rect class="hit" x="268.0" y="36" width="24" height="168"><title>threshold 0.50: student answers 61%, routed exact match 66.2%</title></rect>
+      <g class="hover-dots"><circle class="dot-1" cx="280.0" cy="101.1" r="4"/><circle class="dot-2" cx="280.0" cy="92.7" r="4"/></g></g>
+      <g><rect class="hit" x="292.4" y="36" width="24" height="168"><title>threshold 0.55: student answers 57%, routed exact match 68.8%</title></rect>
+      <g class="hover-dots"><circle class="dot-1" cx="304.4" cy="107.4" r="4"/><circle class="dot-2" cx="304.4" cy="88.5" r="4"/></g></g>
+      <g><rect class="hit" x="316.8" y="36" width="24" height="168"><title>threshold 0.60: student answers 51%, routed exact match 72.5%</title></rect>
+      <g class="hover-dots"><circle class="dot-1" cx="328.8" cy="117.9" r="4"/><circle class="dot-2" cx="328.8" cy="82.2" r="4"/></g></g>
+      <g><rect class="hit" x="341.2" y="36" width="24" height="168"><title>threshold 0.65: student answers 35%, routed exact match 70.0%</title></rect>
+      <g class="hover-dots"><circle class="dot-1" cx="353.2" cy="145.2" r="4"/><circle class="dot-2" cx="353.2" cy="86.4" r="4"/></g></g>
+      <g><rect class="hit" x="365.6" y="36" width="24" height="168"><title>threshold 0.70: student answers 29%, routed exact match 72.5%</title></rect>
+      <g class="hover-dots"><circle class="dot-1" cx="377.6" cy="155.7" r="4"/><circle class="dot-2" cx="377.6" cy="82.2" r="4"/></g></g>
+      <g><rect class="hit" x="390.0" y="36" width="24" height="168"><title>threshold 0.75: student answers 26%, routed exact match 72.5%</title></rect>
+      <g class="hover-dots"><circle class="dot-1" cx="402.0" cy="159.9" r="4"/><circle class="dot-2" cx="402.0" cy="82.2" r="4"/></g></g>
+      <g><rect class="hit" x="414.4" y="36" width="24" height="168"><title>threshold 0.80: student answers 16%, routed exact match 73.8%</title></rect>
+      <g class="hover-dots"><circle class="dot-1" cx="426.4" cy="176.7" r="4"/><circle class="dot-2" cx="426.4" cy="80.1" r="4"/></g></g>
+      <g><rect class="hit" x="438.8" y="36" width="24" height="168"><title>threshold 0.85: student answers 12%, routed exact match 73.8%</title></rect>
+      <g class="hover-dots"><circle class="dot-1" cx="450.8" cy="183.0" r="4"/><circle class="dot-2" cx="450.8" cy="80.1" r="4"/></g></g>
+      <g><rect class="hit" x="463.2" y="36" width="24" height="168"><title>threshold 0.90: student answers 9%, routed exact match 73.8%</title></rect>
+      <g class="hover-dots"><circle class="dot-1" cx="475.2" cy="189.3" r="4"/><circle class="dot-2" cx="475.2" cy="80.1" r="4"/></g></g>
+      <g><rect class="hit" x="487.6" y="36" width="24" height="168"><title>threshold 0.95: student answers 5%, routed exact match 75.0%</title></rect>
+      <g class="hover-dots"><circle class="dot-1" cx="499.6" cy="195.6" r="4"/><circle class="dot-2" cx="499.6" cy="78.0" r="4"/></g></g>
+      <g><rect class="hit" x="512.0" y="36" width="24" height="168"><title>threshold 1.00: student answers 0%, routed exact match 75.0%</title></rect>
+      <g class="hover-dots"><circle class="dot-1" cx="524.0" cy="204.0" r="4"/><circle class="dot-2" cx="524.0" cy="78.0" r="4"/></g></g>
+    </svg>
+    <p class="small muted">Hover the chart for exact values. At threshold 0 the student answers everything it can parse; at 1 the teacher answers everything.</p>
+  </div>
+  <div class="panel">
+    <h3>Policy</h3>
+    <p>The student answers first. Its answer goes to the teacher when the JSON does not parse, fails the schema, or its confidence (the lowest first-token probability over the five structured fields) is below <strong class="num">0.77</strong>.</p>
+<p class="small muted">Threshold: calibrated on val (teacher labels), 51 tickets, target exact match 80% on the answers the student keeps.</p>    <table class="kv">
+      <tr><td>Student answers</td><td class="num"><strong>21%</strong> of gold tickets</td></tr>
+      <tr><td>Exact match on those</td><td class="num">76.5%</td></tr>
+      <tr><td>Routed exact match</td><td class="num">73.8%</td></tr>
+<tr><td>Teacher alone</td><td class="num">75.0%</td></tr><tr><td>Student alone</td><td class="num">46.2%</td></tr>    </table>
+  </div>
+</div>
+
+<h2 id="cost">Cost per 1,000 tickets</h2>
+<div class="panel">
+  <table>
+    <thead><tr><th>Option</th><th class="num">USD / 1k tickets</th><th>Basis</th><th></th></tr></thead>
+    <tbody>
+      <tr><td>Teacher via API: nvidia/nemotron-3-super-120b-a12b (paid tier)</td><td class="num"><strong>$0.286</strong></td><td class="small muted">measured 880 input + 479 output tokens per ticket (single-ticket requests) x list price $0.08/$0.45 per 1M (OpenRouter list price, 2026-10-05)</td>
+      <td><span class="badge badge-measured">measured</span></td></tr>
+      <tr><td>Teacher via API: openai/gpt-5.4-mini</td><td class="num"><strong>$2.815</strong></td><td class="small muted">measured 880 input + 479 output tokens per ticket (single-ticket requests) x list price $0.75/$4.5 per 1M (OpenRouter list price, 2026-10-05)</td>
+      <td><span class="badge badge-measured">measured</span></td></tr>
+      <tr><td>Teacher via API: anthropic/claude-sonnet-5</td><td class="num"><strong>$6.550</strong></td><td class="small muted">measured 880 input + 479 output tokens per ticket (single-ticket requests) x list price $2.0/$10.0 per 1M (OpenRouter list price, 2026-10-05)</td>
+      <td><span class="badge badge-measured">measured</span></td></tr>
+      <tr><td>Student self-hosted, CPU (16 vCPU cloud VM (on-demand))</td><td class="num"><strong>$0.703</strong></td><td class="small muted">measured 3.72 s/ticket (batched generation); assumed $0.68/h instance price</td>
+      <td><span class="badge badge-measured">measured</span></td></tr>
+      <tr><td>Student self-hosted, GPU (1x NVIDIA L4 (24 GB))</td><td class="num"><strong>$0.011</strong></td><td class="small muted">assumption, not measured: 20 tickets/s batched on a GPU server at $0.8/h</td>
+      <td><span class="badge badge-assumed">assumption</span></td></tr>
+      <tr><td>Router: CPU student + nvidia/nemotron-3-super-120b-a12b (paid tier) fallback</td><td class="num"><strong>$0.928</strong></td><td class="small muted">student runs on every ticket; teacher paid for the 79% it handles</td><td><span class="badge badge-measured">derived</span></td></tr>
+      <tr><td>Router: CPU student + openai/gpt-5.4-mini fallback</td><td class="num"><strong>$2.920</strong></td><td class="small muted">student runs on every ticket; teacher paid for the 79% it handles</td><td><span class="badge badge-measured">derived</span></td></tr>
+      <tr><td>Router: CPU student + anthropic/claude-sonnet-5 fallback</td><td class="num"><strong>$5.860</strong></td><td class="small muted">student runs on every ticket; teacher paid for the 79% it handles</td><td><span class="badge badge-measured">derived</span></td></tr>
+    </tbody>
+  </table>
+  <p class="small muted" style="margin-top:0.6rem">Teacher single-ticket requests: p50 latency 4.19 s, 879.8 input and 479.0 output tokens per ticket (output includes reasoning tokens). The free models used here cost $0; the API rows price the same token counts at list prices.</p>
+</div>
+
+<h2 id="dataset">Dataset</h2>
+<div class="two-col">
+  <div class="panel">
+    <h3>Filter funnel</h3>
+    <div class="legend"><span><span class="swatch s1"></span>kept</span><span><span class="swatch" style="background:var(--grid);border:1px solid var(--border)"></span>dropped at this step</span></div>
+    <div class="funnel-row">
+      <span class="funnel-name" title="Seed specs sent to the generator">requested</span>
+      <div class="funnel-bar" title="Seed specs sent to the generator: kept 784">
+        <div class="funnel-kept" style="width: 100.0%"></div>
+      </div>
+      <span class="num small" style="text-align:right">784</span>
+      <span class="funnel-details">Seed specs sent to the generator</span>
+    </div>
+    <div class="funnel-row">
+      <span class="funnel-name" title="Tickets the generator returned">generated</span>
+      <div class="funnel-bar" title="Tickets the generator returned: kept 771, dropped 13">
+        <div class="funnel-kept" style="width: 98.34%"></div>
+<div class="funnel-dropped" style="width: 1.66%"></div>      </div>
+      <span class="num small" style="text-align:right">771</span>
+      <span class="funnel-details">Tickets the generator returned · dropped 13 (missing from teacher output 13)</span>
+    </div>
+    <div class="funnel-row">
+      <span class="funnel-name" title="20-1500 characters">length</span>
+      <div class="funnel-bar" title="20-1500 characters: kept 768, dropped 3">
+        <div class="funnel-kept" style="width: 97.96%"></div>
+<div class="funnel-dropped" style="width: 0.38%"></div>      </div>
+      <span class="num small" style="text-align:right">768</span>
+      <span class="funnel-details">20-1500 characters · dropped 3 (too long 2, too short 1)</span>
+    </div>
+    <div class="funnel-row">
+      <span class="funnel-name" title="Every teacher answer validates against the Pydantic schema (after one repair retry)">schema valid</span>
+      <div class="funnel-bar" title="Every teacher answer validates against the Pydantic schema (after one repair retry): kept 736, dropped 32">
+        <div class="funnel-kept" style="width: 93.88%"></div>
+<div class="funnel-dropped" style="width: 4.08%"></div>      </div>
+      <span class="num small" style="text-align:right">736</span>
+      <span class="funnel-details">Every teacher answer validates against the Pydantic schema (after one repair retry) · dropped 32 (teacher 2 invalid 32)</span>
+    </div>
+    <div class="funnel-row">
+      <span class="funnel-name" title="Teachers agree on intent, urgency, sentiment, product_area, order_id">teacher agreement</span>
+      <div class="funnel-bar" title="Teachers agree on intent, urgency, sentiment, product_area, order_id: kept 462, dropped 274">
+        <div class="funnel-kept" style="width: 58.93%"></div>
+<div class="funnel-dropped" style="width: 34.95%"></div>      </div>
+      <span class="num small" style="text-align:right">462</span>
+      <span class="funnel-details">Teachers agree on intent, urgency, sentiment, product_area, order_id · dropped 274 (disagree urgency 144, disagree sentiment 90, disagree product area 38, disagree intent 48, disagree order id 1)</span>
+    </div>
+    <div class="funnel-row">
+      <span class="funnel-name" title="MinHash near-duplicates (Jaccard &gt;= 0.7) removed">dedup</span>
+      <div class="funnel-bar" title="MinHash near-duplicates (Jaccard &gt;= 0.7) removed: kept 462">
+        <div class="funnel-kept" style="width: 58.93%"></div>
+      </div>
+      <span class="num small" style="text-align:right">462</span>
+      <span class="funnel-details">MinHash near-duplicates (Jaccard &gt;= 0.7) removed</span>
+    </div>
+    <div class="funnel-row">
+      <span class="funnel-name" title="Emails, phone and card numbers replaced with placeholders">pii scrub</span>
+      <div class="funnel-bar" title="Emails, phone and card numbers replaced with placeholders: kept 462">
+        <div class="funnel-kept" style="width: 58.93%"></div>
+      </div>
+      <span class="num small" style="text-align:right">462</span>
+      <span class="funnel-details">Emails, phone and card numbers replaced with placeholders · rewritten 73 (email 68, phone 33, card 1)</span>
+    </div>
+    <div class="funnel-row">
+      <span class="funnel-name" title="At most 70 examples per intent">balance</span>
+      <div class="funnel-bar" title="At most 70 examples per intent: kept 435, dropped 27">
+        <div class="funnel-kept" style="width: 55.48%"></div>
+<div class="funnel-dropped" style="width: 3.44%"></div>      </div>
+      <span class="num small" style="text-align:right">435</span>
+      <span class="funnel-details">At most 70 examples per intent · dropped 27 (cap feedback 27)</span>
+    </div>
+  </div>
+  <div class="panel">
+    <h3>Teacher agreement before filtering</h3>
+    <p class="small muted">Both teachers returned a valid label for 739 of 771 tickets; all five structured fields matched on 62.6% of those.</p>
+    <table>
+      <thead><tr><th>Field</th><th class="num">Agreement</th><th class="num">Cohen's kappa</th></tr></thead>
+      <tbody><tr><td>intent</td><td class="num">93.5%</td><td class="num">0.93</td></tr><tr><td>urgency</td><td class="num">80.4%</td><td class="num">0.67</td></tr><tr><td>sentiment</td><td class="num">87.8%</td><td class="num">0.81</td></tr><tr><td>product_area</td><td class="num">94.7%</td><td class="num">0.94</td></tr><tr><td>order_id</td><td class="num">99.9%</td><td class="num">1.00</td></tr></tbody>
+    </table>
+    <p class="small muted" style="margin-top:0.5rem">Teacher 1: 771 valid (0 after repair), 0 invalid. Teacher 2: 739 valid (57 after repair), 32 invalid. </p>
+  </div>
+</div>
+<div class="panel" style="margin-top:1rem">
+  <h3>Label distribution (train + validation)</h3>
+  <div class="dist">
+    <div>
+      <div class="small" style="font-weight:600;margin-bottom:0.3rem">Intent</div>
+      <div class="dist-row" title="feedback: 70 (16%)"><code>feedback</code><div class="track"><div class="fill" style="width: 100.0%"></div></div><span class="num" style="text-align:right">70</span></div>
+      <div class="dist-row" title="product_question: 50 (11%)"><code>product_question</code><div class="track"><div class="fill" style="width: 71.43%"></div></div><span class="num" style="text-align:right">50</span></div>
+      <div class="dist-row" title="technical_issue: 49 (11%)"><code>technical_issue</code><div class="track"><div class="fill" style="width: 70.0%"></div></div><span class="num" style="text-align:right">49</span></div>
+      <div class="dist-row" title="refund_request: 45 (10%)"><code>refund_request</code><div class="track"><div class="fill" style="width: 64.29%"></div></div><span class="num" style="text-align:right">45</span></div>
+      <div class="dist-row" title="billing_issue: 42 (10%)"><code>billing_issue</code><div class="track"><div class="fill" style="width: 60.0%"></div></div><span class="num" style="text-align:right">42</span></div>
+      <div class="dist-row" title="account_access: 39 (9%)"><code>account_access</code><div class="track"><div class="fill" style="width: 55.71%"></div></div><span class="num" style="text-align:right">39</span></div>
+      <div class="dist-row" title="return_exchange: 31 (7%)"><code>return_exchange</code><div class="track"><div class="fill" style="width: 44.29%"></div></div><span class="num" style="text-align:right">31</span></div>
+      <div class="dist-row" title="other: 29 (7%)"><code>other</code><div class="track"><div class="fill" style="width: 41.43%"></div></div><span class="num" style="text-align:right">29</span></div>
+      <div class="dist-row" title="order_status: 29 (7%)"><code>order_status</code><div class="track"><div class="fill" style="width: 41.43%"></div></div><span class="num" style="text-align:right">29</span></div>
+      <div class="dist-row" title="cancellation: 26 (6%)"><code>cancellation</code><div class="track"><div class="fill" style="width: 37.14%"></div></div><span class="num" style="text-align:right">26</span></div>
+      <div class="dist-row" title="setup_help: 25 (6%)"><code>setup_help</code><div class="track"><div class="fill" style="width: 35.71%"></div></div><span class="num" style="text-align:right">25</span></div>
+    </div>
+    <div>
+      <div class="small" style="font-weight:600;margin-bottom:0.3rem">Urgency</div>
+      <div class="dist-row" title="medium: 211 (49%)"><code>medium</code><div class="track"><div class="fill" style="width: 100.0%"></div></div><span class="num" style="text-align:right">211</span></div>
+      <div class="dist-row" title="low: 183 (42%)"><code>low</code><div class="track"><div class="fill" style="width: 86.73%"></div></div><span class="num" style="text-align:right">183</span></div>
+      <div class="dist-row" title="high: 41 (9%)"><code>high</code><div class="track"><div class="fill" style="width: 19.43%"></div></div><span class="num" style="text-align:right">41</span></div>
+    </div>
+    <div>
+      <div class="small" style="font-weight:600;margin-bottom:0.3rem">Sentiment</div>
+      <div class="dist-row" title="neutral: 207 (48%)"><code>neutral</code><div class="track"><div class="fill" style="width: 100.0%"></div></div><span class="num" style="text-align:right">207</span></div>
+      <div class="dist-row" title="negative: 147 (34%)"><code>negative</code><div class="track"><div class="fill" style="width: 71.01%"></div></div><span class="num" style="text-align:right">147</span></div>
+      <div class="dist-row" title="positive: 81 (19%)"><code>positive</code><div class="track"><div class="fill" style="width: 39.13%"></div></div><span class="num" style="text-align:right">81</span></div>
+    </div>
+    <div>
+      <div class="small" style="font-weight:600;margin-bottom:0.3rem">Product area</div>
+      <div class="dist-row" title="subscription: 84 (19%)"><code>subscription</code><div class="track"><div class="fill" style="width: 100.0%"></div></div><span class="num" style="text-align:right">84</span></div>
+      <div class="dist-row" title="none: 67 (15%)"><code>none</code><div class="track"><div class="fill" style="width: 79.76%"></div></div><span class="num" style="text-align:right">67</span></div>
+      <div class="dist-row" title="app_account: 66 (15%)"><code>app_account</code><div class="track"><div class="fill" style="width: 78.57%"></div></div><span class="num" style="text-align:right">66</span></div>
+      <div class="dist-row" title="lighting: 60 (14%)"><code>lighting</code><div class="track"><div class="fill" style="width: 71.43%"></div></div><span class="num" style="text-align:right">60</span></div>
+      <div class="dist-row" title="thermostat: 55 (13%)"><code>thermostat</code><div class="track"><div class="fill" style="width: 65.48%"></div></div><span class="num" style="text-align:right">55</span></div>
+      <div class="dist-row" title="camera: 53 (12%)"><code>camera</code><div class="track"><div class="fill" style="width: 63.1%"></div></div><span class="num" style="text-align:right">53</span></div>
+      <div class="dist-row" title="doorbell: 50 (11%)"><code>doorbell</code><div class="track"><div class="fill" style="width: 59.52%"></div></div><span class="num" style="text-align:right">50</span></div>
+    </div>
+    <div>
+      <div class="small" style="font-weight:600;margin-bottom:0.3rem">Order id</div>
+      <div class="dist-row" title="present: 152 (35%)"><code>present</code><div class="track"><div class="fill" style="width: 53.71%"></div></div><span class="num" style="text-align:right">152</span></div>
+      <div class="dist-row" title="null: 283 (65%)"><code>null</code><div class="track"><div class="fill" style="width: 100.0%"></div></div><span class="num" style="text-align:right">283</span></div>
+    </div>
+  </div>
+</div>
+
+<h2 id="training">Training</h2>
+<div class="panel">
+  <table class="kv">
+    <tr><td>Base model</td><td><code>Qwen/Qwen2.5-0.5B-Instruct</code> + LoRA r=16, alpha=32 (8,798,208 trainable of 502,830,976 parameters)</td></tr>
+    <tr><td>Data</td><td>384 examples × 2.0 epochs = 96 steps, batch 8, lr 0.0003, mean 304.2 tokens/example</td></tr>
+    <tr><td>Hardware</td><td>cpu (16 threads), 57.3 min wall time</td></tr>
+    <tr><td>Loss</td><td>train 0.3338, validation 0.373</td></tr>
+    <tr><td>Adapter size</td><td>35.24 MB</td></tr>
+  </table>
+</div>
+
+<h2 id="usage">API usage</h2>
+<div class="panel">
+  <p>186 real requests (169 ok, 12 retried after rate limits or empty answers, 5 failed). Stages: label[1] 69, label[0] 50, generate 49, eval.teacher 18.</p>
+  <p class="small muted">Answers served by: <code>nvidia/nemotron-3-super-120b-a12b:free</code> (77), <code>dots-studio/dots-3-note-preview:free</code> (54), <code>qwen/qwen3.8-27b:free</code> (38)</p>
+</div>
+    <footer>Distillery: teacher-to-student distillation for support-ticket triage. Run directory <code>results/openrouter-free-2026-10-05</code>.</footer>
+  </main>
+</body>
+</html>
