@@ -1,0 +1,98 @@
+# Real run with FREE OpenRouter models only (the run behind the README numbers, 2026-10-05).
+#   set OPENROUTER_API_KEY in the environment, then: distillery run-all -c configs/openrouter-free.yaml
+# The free-only guard refuses any model id that does not end in ":free" (config load and every answer).
+name: openrouter-free
+output_dir: runs/openrouter-free
+seed: 7
+
+teacher:
+  require_free_models: true
+  generator:
+    provider: openrouter
+    model: qwen/qwen3.8-27b:free
+    fallback_models: [google/gemma-4-31b-it:free, nvidia/nemotron-3-super-120b-a12b:free]
+    reasoning_effort: low
+    max_tokens: 12000
+    timeout_seconds: 300
+  labelers:
+    # Teacher 1 (also "the teacher" in the eval): primary + fallbacks when rate-limited upstream.
+    - provider: openrouter
+      model: nvidia/nemotron-3-super-120b-a12b:free
+      fallback_models: [qwen/qwen3.8-27b:free]
+      reasoning_effort: low
+      max_tokens: 12000
+      timeout_seconds: 300
+    # Teacher 2: a different model family for the self-consistency check.
+    - provider: openrouter
+      model: dots-studio/dots-3-note-preview:free
+      fallback_models: [google/gemma-4-31b-it:free]
+      reasoning_effort: low
+      max_tokens: 12000
+      timeout_seconds: 300
+  min_seconds_between_requests: 3.0
+  concurrency: 5
+  max_retries: 4
+  retry_base_seconds: 6.0
+  max_calls: 230
+  cache_dir: .cache/llm
+
+generate:
+  num_tickets: 720
+  tickets_per_call: 16
+
+label:
+  batch_size: 16
+  max_repair_attempts: 1
+  scrub_pii_before_teacher: true
+
+filter:
+  min_chars: 20
+  max_chars: 1500
+  require_agreement: true
+  agreement_fields: [intent, urgency, sentiment, product_area, order_id]
+  dedup_threshold: 0.7
+  max_per_intent: 70
+
+build:
+  val_fraction: 0.12
+
+student:
+  backend: hf
+  base_model: Qwen/Qwen2.5-0.5B-Instruct
+  max_new_tokens: 110
+  batch_size: 8
+  torch_threads: 16
+  device: cpu
+
+train:
+  epochs: 2
+  learning_rate: 3.0e-4
+  batch_size: 8
+  max_seq_len: 512
+  lora_r: 16
+  lora_alpha: 32
+  lora_dropout: 0.05
+  lora_target_modules: all-linear
+
+router:
+  min_confidence: auto
+  target_exact_match: 0.8
+
+eval:
+  gold_path: data/gold/gold.jsonl
+  teacher_batch_size: 8
+  teacher_latency_probe: 6
+  teacher_index: 0
+
+cost:
+  # List prices on OpenRouter on 2026-10-05 (USD per 1M tokens), used to price the measured teacher tokens.
+  api_prices:
+    - {name: nvidia/nemotron-3-super-120b-a12b (paid tier), input_per_million: 0.08, output_per_million: 0.45, source: "OpenRouter list price, 2026-10-05"}
+    - {name: openai/gpt-5.4-mini, input_per_million: 0.75, output_per_million: 4.5, source: "OpenRouter list price, 2026-10-05"}
+    - {name: anthropic/claude-sonnet-5, input_per_million: 2.0, output_per_million: 10.0, source: "OpenRouter list price, 2026-10-05"}
+  cpu_instance: "16 vCPU cloud VM (on-demand)"
+  cpu_hourly_usd: 0.68
+  cpu_parallel_workers: 1
+  gpu_instance: "1x NVIDIA L4 (24 GB)"
+  gpu_hourly_usd: 0.80
+  gpu_assumed_items_per_second: 20

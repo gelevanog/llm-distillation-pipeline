@@ -1,0 +1,38 @@
+# Offline demo: deterministic fake teacher and fake student. No API keys, no downloads, runs in seconds.
+# Used by the tests, CI and `make demo`. The numbers it produces only prove the pipeline runs.
+name: demo
+output_dir: runs/demo
+seed: 42
+
+teacher:
+  generator: {provider: fake, model: fake-teacher-a}
+  labelers:
+    - {provider: fake, model: fake-teacher-a}
+    - {provider: fake, model: fake-teacher-b}
+  min_seconds_between_requests: 0
+  cache_dir: .cache/llm
+
+generate:
+  num_tickets: 330
+  tickets_per_call: 12
+
+label:
+  batch_size: 12
+
+filter:
+  max_per_intent: 40
+
+student:
+  backend: fake
+
+router:
+  min_confidence: auto
+  target_exact_match: 0.6
+
+eval:
+  teacher_batch_size: 8
+  teacher_latency_probe: 5
+
+cost:
+  api_prices:
+    - {name: anthropic/claude-sonnet-5, input_per_million: 2.0, output_per_million: 10.0, source: "OpenRouter list price, 2026-10-05"}

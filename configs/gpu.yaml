@@ -1,0 +1,49 @@
+# GPU student: Qwen2.5-1.5B-Instruct trained in bf16 on the committed real dataset (no API calls needed).
+#   pip install -e ".[train]" && distillery train -c configs/gpu.yaml && distillery eval -c configs/gpu.yaml
+# Teacher settings are only used if you also run `eval` with the teacher system or serve with fallback.
+name: gpu-qwen2.5-1.5b
+output_dir: runs/gpu-qwen2.5-1.5b
+dataset_dir: results/openrouter-free-2026-10-05/dataset
+seed: 7
+
+teacher:
+  require_free_models: true
+  labelers:
+    - provider: openrouter
+      model: nvidia/nemotron-3-super-120b-a12b:free
+      fallback_models: [qwen/qwen3.8-27b:free]
+      reasoning_effort: low
+      max_tokens: 12000
+      timeout_seconds: 300
+  max_calls: 40
+
+student:
+  backend: hf
+  base_model: Qwen/Qwen2.5-1.5B-Instruct   # or Qwen/Qwen2.5-3B-Instruct on a 24 GB GPU
+  max_new_tokens: 110
+  batch_size: 32
+  device: cuda
+
+train:
+  epochs: 3
+  learning_rate: 2.0e-4
+  batch_size: 16
+  max_seq_len: 512
+  lora_r: 16
+  lora_alpha: 32
+  lora_dropout: 0.05
+  lora_target_modules: all-linear
+  bf16: true                 # set false on a T4 (no bf16), the trainer then uses fp32
+  gradient_checkpointing: false
+
+router:
+  min_confidence: auto
+  target_exact_match: 0.8
+
+eval:
+  gold_path: data/gold/gold.jsonl
+
+cost:
+  gpu_instance: "1x NVIDIA L4 (24 GB)"
+  gpu_hourly_usd: 0.80
+  gpu_assumed_items_per_second: 20
