@@ -9,6 +9,10 @@
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.142-009688?logo=fastapi&logoColor=white)
 ![License: MIT](https://img.shields.io/badge/License-MIT-green)
 
+https://github.com/user-attachments/assets/cc2836ee-d040-4ac3-b4ed-fe3831d4e81c
+
+<sub>47-second walkthrough with voiceover. Can't play it? [Download the MP4](docs/demo.mp4).</sub>
+
 ![Distillery dashboard: gold-set comparison of teacher, zero-shot student and fine-tuned student](docs/screenshots/dashboard.png)
 
 **Real run, 2026-10-05** (free OpenRouter teachers, Qwen2.5-0.5B student fine-tuned on a 16-core CPU, scored on 80 hand-labeled tickets):
