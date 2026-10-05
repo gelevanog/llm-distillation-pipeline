@@ -1,0 +1,29 @@
+{% macro fields(t, other, conf) %}
+<table class="kv">
+  {% for name in ['intent', 'urgency', 'sentiment', 'product_area', 'order_id'] %}
+  {% set value = t[name] if t else none %}
+  <tr><td>{{ name }}</td><td><code class="{{ 'diff' if other and other[name] != value }}">{{ value if value is not none else 'null' }}</code>
+    {% if conf and name in conf %}<span class="conf" title="confidence {{ '%.2f' % conf[name] }}"><span style="width: {{ (conf[name] * 100)|round(1) }}%"></span></span> <span class="small muted num">{{ '%.2f' % conf[name] }}</span>{% endif %}</td></tr>
+  {% endfor %}
+  <tr><td>summary</td><td>{{ t.summary if t else '' }}</td></tr>
+</table>
+{% endmacro %}
+<div class="decision">
+  Router decision: <span class="badge badge-{{ result.routed.source }}">{{ result.routed.source }}</span>
+  <span class="muted">{{ result.routed.reason }}</span>
+</div>
+<div class="result-grid">
+  <div class="panel">
+    <h3><span class="swatch s3"></span>Student <span class="muted small">{{ student_label }} · {{ '%.0f' % (result.student.latency_s * 1000) }} ms · confidence {{ '%.2f' % result.student.confidence }}</span></h3>
+    {% if result.student.triage %}{{ fields(result.student.triage.model_dump(mode='json'), result.teacher_dict, result.student.field_confidence) }}
+    {% else %}<p class="diff">Invalid output: {{ result.student.error }}</p>{% endif %}
+    <details><summary class="small muted">Raw output</summary><pre>{{ result.student.raw }}</pre></details>
+  </div>
+  <div class="panel">
+    <h3><span class="swatch s1"></span>Teacher <span class="muted small">{{ result.teacher_model or teacher_label or 'disabled' }}{% if result.teacher_latency is not none %} · {{ '%.0f' % (result.teacher_latency * 1000) }} ms{% endif %}</span></h3>
+    {% if result.teacher_dict %}{{ fields(result.teacher_dict, none, none) }}
+    {% elif result.teacher_error %}<p class="diff">{{ result.teacher_error }}</p>
+    {% else %}<p class="muted">Teacher disabled for the playground.</p>{% endif %}
+  </div>
+</div>
+<p class="small muted">Fields where the student differs from the teacher are highlighted.</p>

@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Distillery{% endblock %}</title>
+  <style>{% include "_style.css" %}</style>
+  {% if live %}<script src="https://unpkg.com/htmx.org@2.0.4" integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+" crossorigin="anonymous"></script>{% endif %}
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="{{ '/' if live else '#' }}"><span class="logo">D</span> Distillery</a>
+    {% if live %}
+    <nav>
+      <a href="/" class="{{ 'active' if page == 'overview' }}">Results</a>
+      <a href="/playground" class="{{ 'active' if page == 'playground' }}">Playground</a>
+      <a href="/docs">API</a>
+    </nav>
+    {% endif %}
+  </header>
+  <main class="container">
+    {% block content %}{% endblock %}
+    <footer>Distillery: teacher-to-student distillation for support-ticket triage.{% if view %} Run directory <code>{{ view.run_dir }}</code>.{% endif %}</footer>
+  </main>
+</body>
+</html>

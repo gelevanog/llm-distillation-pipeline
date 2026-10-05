@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Distillery playground{% endblock %}
+{% block content %}
+<h1>Playground</h1>
+<p class="muted">Run one ticket through the student and the teacher side by side, and see what the router would do.</p>
+<div class="chips" style="margin:0.6rem 0 1rem">
+  <span class="chip">student: {{ student_label }}</span>
+  <span class="chip">teacher: {{ teacher_label or 'disabled' }}</span>
+  <span class="chip">threshold {{ '%.2f' % threshold }}</span>
+</div>
+<div class="panel">
+  <form class="play" method="post" action="/playground" hx-post="/playground" hx-target="#result" hx-swap="innerHTML" hx-indicator="#run">
+    <label class="small muted" for="example">Example from the gold set</label>
+    <select id="example" onchange="document.getElementById('text').value = this.value">
+      <option value="">Pick an example...</option>
+      {% for ex in examples %}<option value="{{ ex.text }}">{{ ex.id }}: {{ ex.text[:90] }}{{ '...' if ex.text|length > 90 }}</option>{% endfor %}
+    </select>
+    <label class="small muted" for="text">Ticket text</label>
+    <textarea id="text" name="text" required>{{ text or '' }}</textarea>
+    <button id="run" class="btn" type="submit">Triage with both</button>
+  </form>
+</div>
+<div id="result">{% if result %}{% include "partials/result.html" %}{% endif %}</div>
+{% endblock %}

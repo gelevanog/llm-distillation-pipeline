@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+{% block title %}Distillery results{% endblock %}
+{% block content %}
+{% set r = view.report %}
+<section class="hero">
+  <div>
+    <h1>Teacher vs student on support-ticket triage</h1>
+    <p class="muted">A large LLM labels synthetic tickets; a small model is fine-tuned on them and scored on a hand-labeled gold set.</p>
+  </div>
+  <div class="chips">
+    <span class="chip">config: {{ r.config or config_name }}</span>
+    {% if r.created %}<span class="chip">evaluated {{ r.created[:10] }}</span>{% endif %}
+    {% if view.calls %}<span class="chip {{ 'chip-good' if view.calls.all_free else 'chip-warn' }}">{{ view.calls.total }} real API calls{{ ', all :free models' if view.calls.all_free }}</span>{% endif %}
+  </div>
+</section>
+
+{% if not view.has_data %}
+<p class="note" style="margin-top:1.5rem">No results in <code>{{ view.run_dir }}</code> yet. Run <code>distillery run-all -c configs/demo.yaml</code> (offline, no keys), then reload.</p>
+{% else %}
+
+{% set sys = {} %}{% for s in view.systems %}{% set _ = sys.update({s.key: s}) %}{% endfor %}
+<div class="tiles">
+  {% if view.stats %}
+  <div class="tile"><div class="tile-label">Training examples</div><div class="tile-value num">{{ view.stats.sizes.train }}</div>
+    <div class="tile-sub">+ {{ view.stats.sizes.val }} validation, after filtering</div></div>
+  {% endif %}
+  <div class="tile"><div class="tile-label">Gold test tickets</div><div class="tile-value num">{{ r.gold_items }}</div>
+    <div class="tile-sub">written and labeled by hand</div></div>
+  {% if sys.student_finetuned %}
+  <div class="tile"><div class="tile-label">Fine-tuned student, exact match</div>
+    <div class="tile-value num">{{ '%.1f' % (sys.student_finetuned.exact_match * 100) }}%</div>
+    <div class="tile-sub">{% if sys.teacher %}teacher {{ '%.1f' % (sys.teacher.exact_match * 100) }}%{% endif %}{% if sys.student_zero_shot %} · zero-shot {{ '%.1f' % (sys.student_zero_shot.exact_match * 100) }}%{% endif %}</div></div>
+  {% endif %}
+  {% if view.router and view.router.gold %}
+  <div class="tile"><div class="tile-label">Traffic the student keeps</div>
+    <div class="tile-value num">{{ '%.0f' % (view.router.gold.offload_rate * 100) }}%</div>
+    <div class="tile-sub">routed exact match {{ '%.1f' % (view.router.gold.exact_match * 100) }}%</div></div>
+  {% endif %}
+  {% if view.cost %}
+  {% for line in view.cost.per_1k_tickets if line.name.startswith('Student self-hosted, CPU') %}
+  <div class="tile"><div class="tile-label">Student cost / 1k tickets (CPU)</div>
+    <div class="tile-value num">${{ '%.3f' % line.usd_per_1k }}</div>
+    <div class="tile-sub">measured latency, assumed VM price</div></div>
+  {% endfor %}
+  {% endif %}
+</div>
+
+{% if view.systems %}
+<h2 id="comparison">Gold-set comparison</h2>
+<div class="panel">
+  <div class="legend">
+    {% for s in view.systems %}<span><span class="swatch s{{ s.slot }}"></span>{{ s.label }}: <code>{{ s.model }}</code></span>{% endfor %}
+  </div>
+  <table>
+    <thead><tr><th>Metric</th>{% for s in view.systems %}<th>{{ s.label }}</th>{% endfor %}</tr></thead>
+    <tbody>
+    {% for row in view.metric_rows %}
+      <tr>
+        <td>{{ row.name }}{% if row.hint %}<div class="small muted">{{ row.hint }}</div>{% endif %}</td>
+        {% for cell in row.cells %}
+        <td><div class="cell-bar" title="{{ row.name }}: {{ '%.1f' % (cell.value * 100) }}%"><div class="track"><div class="fill s{{ cell.slot }}" style="width: {{ cell.width }}%"></div></div><span class="value">{{ '%.1f' % (cell.value * 100) }}%</span></div></td>
+        {% endfor %}
+      </tr>
+    {% endfor %}
+      <tr>
+        <td>Latency per ticket<div class="small muted">mean; see notes below</div></td>
+        {% for s in view.systems %}<td class="num">{{ '%.2f' % s.latency_s_per_item.mean }} s</td>{% endfor %}
+      </tr>
+    </tbody>
+  </table>
+  <p class="small muted" style="margin-top:0.6rem">
+    {% for s in view.systems %}{{ s.label }}: {{ s.latency_note }}.{% if not loop.last %} {% endif %}{% endfor %}
+    Invalid answers count as wrong in every metric.
+  </p>
+</div>
+
+<div class="three-col" id="mistakes" style="margin-top:1rem">
+  {% for s in view.systems if s.intent_confusions %}
+  <div class="panel">
+    <h3><span class="swatch s{{ s.slot }}"></span>{{ s.label }}: most common intent mistakes</h3>
+    <table>
+      <thead><tr><th>Gold intent</th><th>Predicted</th><th class="num">Tickets</th></tr></thead>
+      <tbody>{% for c in s.intent_confusions[:5] %}<tr><td><code>{{ c.gold }}</code></td><td><code>{{ c.predicted }}</code></td><td class="num">{{ c.count }}</td></tr>{% endfor %}</tbody>
+    </table>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if view.router %}
+<h2 id="router">Router: student first, teacher on fallback</h2>
+<div class="two-col">
+  <div class="panel">
+    {% if view.curve %}
+    {% set c = view.curve %}
+    <div class="legend"><span><span class="swatch s1"></span>Share answered by the student</span><span><span class="swatch s2"></span>Routed exact match (gold)</span></div>
+    <svg viewBox="0 0 {{ c.width }} {{ c.height }}" width="100%" role="img" aria-label="Offload rate and routed exact match by confidence threshold">
+      {% for g in c.grid %}<line class="gridline" x1="{{ c.pad }}" x2="{{ c.width - c.pad }}" y1="{{ g.y }}" y2="{{ g.y }}"/><text x="{{ c.pad - 6 }}" y="{{ g.y + 4 }}" text-anchor="end">{{ g.label }}</text>{% endfor %}
+      {% for t in c.xticks %}<text x="{{ t.x }}" y="{{ c.baseline_y + 16 }}" text-anchor="middle">{{ t.label }}</text>{% endfor %}
+      <text x="{{ c.width / 2 }}" y="{{ c.height - 2 }}" text-anchor="middle">confidence threshold</text>
+      <line class="marker-line" x1="{{ c.marker.x }}" x2="{{ c.marker.x }}" y1="{{ c.pad }}" y2="{{ c.baseline_y }}"/>
+      <path class="line-1" d="{{ c.offload_path }}"/>
+      <path class="line-2" d="{{ c.exact_path }}"/>
+      <circle class="dot-1" cx="{{ c.marker.x }}" cy="{{ c.marker.offload_y }}" r="5"/>
+      <circle class="dot-2" cx="{{ c.marker.x }}" cy="{{ c.marker.exact_y }}" r="5"/>
+      <text class="label" x="{{ c.marker.x + 8 }}" y="{{ c.pad - 8 }}">chosen {{ '%.2f' % c.marker.threshold }}</text>
+      {% for p in c.points %}
+      <g><rect class="hit" x="{{ p.x - 12 }}" y="{{ c.pad }}" width="24" height="{{ c.baseline_y - c.pad }}"><title>threshold {{ '%.2f' % p.threshold }}: student answers {{ '%.0f' % (p.offload_rate * 100) }}%, routed exact match {{ '%.1f' % (p.exact_match * 100) }}%</title></rect>
+      <g class="hover-dots"><circle class="dot-1" cx="{{ p.x }}" cy="{{ p.offload_y }}" r="4"/><circle class="dot-2" cx="{{ p.x }}" cy="{{ p.exact_y }}" r="4"/></g></g>
+      {% endfor %}
+    </svg>
+    <p class="small muted">Hover the chart for exact values. At threshold 0 the student answers everything it can parse; at 1 the teacher answers everything.</p>
+    {% endif %}
+  </div>
+  <div class="panel">
+    <h3>Policy</h3>
+    <p>The student answers first. Its answer goes to the teacher when the JSON does not parse, fails the schema, or its confidence (the lowest first-token probability over the five structured fields) is below <strong class="num">{{ '%.2f' % view.router.threshold }}</strong>.</p>
+    {% if view.router.calibration %}<p class="small muted">Threshold: calibrated on {{ view.router.calibration.split }}{% if view.router.calibration['items'] %}, {{ view.router.calibration['items'] }} tickets{% endif %}, target exact match {{ '%.0f' % (view.router.target_exact_match * 100) }}% on the answers the student keeps.</p>{% endif %}
+    {% set g = view.router.gold %}
+    <table class="kv">
+      <tr><td>Student answers</td><td class="num"><strong>{{ '%.0f' % (g.offload_rate * 100) }}%</strong> of gold tickets</td></tr>
+      <tr><td>Exact match on those</td><td class="num">{{ '%.1f' % (g.student_exact_match_on_offloaded * 100) if g.student_exact_match_on_offloaded is not none else 'n/a' }}{{ '%' if g.student_exact_match_on_offloaded is not none }}</td></tr>
+      <tr><td>Routed exact match</td><td class="num">{{ '%.1f' % (g.exact_match * 100) }}%</td></tr>
+      {% if sys.teacher %}<tr><td>Teacher alone</td><td class="num">{{ '%.1f' % (sys.teacher.exact_match * 100) }}%</td></tr>{% endif %}
+      {% if sys.student_finetuned %}<tr><td>Student alone</td><td class="num">{{ '%.1f' % (sys.student_finetuned.exact_match * 100) }}%</td></tr>{% endif %}
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% if view.cost %}
+<h2 id="cost">Cost per 1,000 tickets</h2>
+<div class="panel">
+  <table>
+    <thead><tr><th>Option</th><th class="num">USD / 1k tickets</th><th>Basis</th><th></th></tr></thead>
+    <tbody>
+    {% for line in view.cost.per_1k_tickets %}
+      <tr><td>{{ line.name }}</td><td class="num"><strong>${{ '%.3f' % line.usd_per_1k if line.usd_per_1k < 10 else '%.2f' % line.usd_per_1k }}</strong></td><td class="small muted">{{ line.basis }}</td>
+      <td><span class="badge {{ 'badge-measured' if line.measured else 'badge-assumed' }}">{{ 'measured' if line.measured else 'assumption' }}</span></td></tr>
+    {% endfor %}
+    {% for line in view.cost.routed or [] %}
+      <tr><td>Router: {{ line.student }} student + {{ line.teacher }} fallback</td><td class="num"><strong>${{ '%.3f' % line.usd_per_1k }}</strong></td><td class="small muted">student runs on every ticket; teacher paid for the {{ '%.0f' % ((1 - line.offload_rate) * 100) }}% it handles</td><td><span class="badge badge-measured">derived</span></td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% if view.teacher_usage and view.teacher_usage.single_request_probe %}
+  {% set p = view.teacher_usage.single_request_probe %}
+  <p class="small muted" style="margin-top:0.6rem">Teacher single-ticket requests: p50 latency {{ p.latency_s.p50 }} s, {{ p.input_tokens_per_item }} input and {{ p.output_tokens_per_item }} output tokens per ticket (output includes reasoning tokens). The free models used here cost $0; the API rows price the same token counts at list prices.</p>
+  {% endif %}
+</div>
+{% endif %}
+
+{% if view.funnel %}
+<h2 id="dataset">Dataset</h2>
+<div class="two-col">
+  <div class="panel">
+    <h3>Filter funnel</h3>
+    <div class="legend"><span><span class="swatch s1"></span>kept</span><span><span class="swatch" style="background:var(--grid);border:1px solid var(--border)"></span>dropped at this step</span></div>
+    {% for step in view.funnel %}
+    <div class="funnel-row">
+      <span class="funnel-name" title="{{ step.description }}">{{ step.name.replace('_', ' ') }}</span>
+      <div class="funnel-bar" title="{{ step.description }}: kept {{ step.kept }}{% if step.dropped %}, dropped {{ step.dropped }}{% endif %}">
+        <div class="funnel-kept" style="width: {{ step.width }}%"></div>
+        {% if step.dropped %}<div class="funnel-dropped" style="width: {{ step.dropped_width }}%"></div>{% endif %}
+      </div>
+      <span class="num small" style="text-align:right">{{ step.kept }}</span>
+      <span class="funnel-details">{{ step.description }}{% if step.dropped %} · dropped {{ step.dropped }}{% endif %}{% if step.modified %} · rewritten {{ step.modified }}{% endif %}{% if step.details %} ({{ step.details }}){% endif %}</span>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="panel">
+    <h3>Teacher agreement before filtering</h3>
+    {% set a = view.label_stats %}
+    {% if a and a.fields %}
+    <p class="small muted">Both teachers returned a valid label for {{ a.both_valid }} of {{ a.tickets }} tickets; all five structured fields matched on {{ '%.1f' % (a.all_fields_agreement * 100) }}% of those.</p>
+    <table>
+      <thead><tr><th>Field</th><th class="num">Agreement</th><th class="num">Cohen's kappa</th></tr></thead>
+      <tbody>{% for field, v in a.fields.items() %}<tr><td>{{ field }}</td><td class="num">{{ '%.1f' % (v.agreement * 100) }}%</td><td class="num">{{ '%.2f' % v.kappa }}</td></tr>{% endfor %}</tbody>
+    </table>
+    <p class="small muted" style="margin-top:0.5rem">{% for t in a.teachers %}Teacher {{ loop.index }}: {{ t.valid }} valid ({{ t.repaired }} after repair), {{ t.invalid }} invalid. {% endfor %}</p>
+    {% else %}<p class="muted">Single teacher: no agreement statistics.</p>{% endif %}
+  </div>
+</div>
+{% if view.distribution %}
+<div class="panel" style="margin-top:1rem">
+  <h3>Label distribution (train + validation)</h3>
+  <div class="dist">
+    {% for f in view.distribution %}
+    <div>
+      <div class="small" style="font-weight:600;margin-bottom:0.3rem">{{ f.field }}</div>
+      {% for row in f.rows %}
+      <div class="dist-row" title="{{ row.label }}: {{ row.count }} ({{ '%.0f' % (row.share * 100) }}%)"><code>{{ row.label }}</code><div class="track"><div class="fill" style="width: {{ row.width }}%"></div></div><span class="num" style="text-align:right">{{ row.count }}</span></div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+{% endif %}
+
+{% if view.training %}
+{% set t = view.training %}
+<h2 id="training">Training</h2>
+<div class="panel">
+  <table class="kv">
+    <tr><td>Base model</td><td><code>{{ t.base_model }}</code> + LoRA r={{ t.lora.r }}, alpha={{ t.lora.alpha }} ({{ '{:,}'.format(t.trainable_params) }} trainable of {{ '{:,}'.format(t.total_params) }} parameters)</td></tr>
+    <tr><td>Data</td><td>{{ t.examples }} examples × {{ t.epochs }} epochs = {{ t.steps }} steps, batch {{ t.batch_size }}, lr {{ t.learning_rate }}, mean {{ t.seq_len.mean }} tokens/example</td></tr>
+    <tr><td>Hardware</td><td>{{ t.device }} ({{ t.torch_threads }} threads), {{ '%.1f' % (t.wall_seconds / 60) }} min wall time</td></tr>
+    <tr><td>Loss</td><td>train {{ t.train_loss }}{% if t.final_eval_loss %}, validation {{ t.final_eval_loss }}{% endif %}</td></tr>
+    <tr><td>Adapter size</td><td>{{ t.adapter_mb }} MB</td></tr>
+  </table>
+</div>
+{% endif %}
+
+{% if view.calls %}
+<h2 id="usage">API usage</h2>
+<div class="panel">
+  <p>{{ view.calls.total }} real requests ({{ view.calls.ok }} ok, {{ view.calls.retried }} retried after rate limits or empty answers, {{ view.calls.failed }} failed). Stages: {% for s, n in view.calls.stages %}{{ s }} {{ n }}{{ ', ' if not loop.last }}{% endfor %}.</p>
+  <p class="small muted">Answers served by: {% for m, n in view.calls.models %}<code>{{ m }}</code> ({{ n }}){{ ', ' if not loop.last }}{% endfor %}</p>
+</div>
+{% endif %}
+{% endif %}
+{% endblock %}
